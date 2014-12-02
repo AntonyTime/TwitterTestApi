@@ -12,7 +12,13 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
 
+import com.mysql.fabric.jdbc.FabricMySQLDriver;
+
+import java.sql.*;
+
 public class TestApi {
+
+
 
     Twitter twitter = TwitterFactory.getSingleton();
 
@@ -45,24 +51,36 @@ public class TestApi {
         }
     }
 
-    public void showFollowers() throws Exception{
+    public void getFollowers() throws Exception{
 
-    long lCursor = -1;
-    long userID = 1260205219;
-    IDs friendsIDs = twitter.getFriendsIDs(userID, lCursor);
+        long lCursor = -1;
+        long userID = 1260205219;
+        IDs followersIDs = twitter.getFollowersIDs(userID, lCursor);
 
-    System.out.println("==========================");
-    System.out.println(twitter.showUser(userID).getName());
-    System.out.println("Followers: " + twitter.showUser(userID).getFollowersCount());
-    System.out.println("==========================");
+//        System.out.println("==========================");
+//        System.out.println(twitter.showUser(userID).getName());
+//        System.out.println("Followers: " + twitter.showUser(userID).getFollowersCount());
+//        System.out.println("==========================");
 
-    do{
-        for (long i : friendsIDs.getIDs()){
-            System.out.println("Name: " + twitter.showUser(i).getName());
-            System.out.println("Follower ID: " + i);
-            System.out.println("==========================");
-        }
-    } while(friendsIDs.hasNext());
+        do{
+            for (long i : followersIDs.getIDs()){
+
+                Driver driver = new FabricMySQLDriver();
+                DriverManager.registerDriver(driver);
+                Connection connection = DriverManager.getConnection(Constant.getUrl(), Constant.getUsername(), Constant.getUserpawwsord());
+
+                PreparedStatement preparedStatement = connection.prepareStatement(Constant.getQuerygetfollowers());
+
+                preparedStatement.setLong(1,i);
+                preparedStatement.setString(2,twitter.showUser(i).getName());
+
+                preparedStatement.executeUpdate();
+
+//                System.out.println("Name: " + twitter.showUser(i).getName());
+//                System.out.println("Follower ID: " + i);
+//                System.out.println("==========================");
+            }
+        } while(followersIDs.hasNext());
 
     }
 
