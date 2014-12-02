@@ -13,7 +13,7 @@ public class Main {
         }
 
         try {
-            testApi.showFollowers();
+            testApi.getFollowers();
         } catch (Exception e) {
             e.printStackTrace();
         }
