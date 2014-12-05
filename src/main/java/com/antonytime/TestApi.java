@@ -1,9 +1,6 @@
 package com.antonytime;
 
-import twitter4j.IDs;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
+import twitter4j.*;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
@@ -11,16 +8,18 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.sql.*;
+import java.util.ArrayList;
+
 
 import com.mysql.fabric.jdbc.FabricMySQLDriver;
 
-import java.sql.*;
-
 public class TestApi {
 
-
-
     Twitter twitter = TwitterFactory.getSingleton();
+
+    ArrayList<Long> followersListFromDataBase = new ArrayList <Long>();
+    ArrayList<Long> followersListFromServer = new ArrayList <Long>();
 
     public void logIn() throws Exception {
 
@@ -51,36 +50,72 @@ public class TestApi {
         }
     }
 
+    public Connection connectDataBase() throws Exception{
+
+        Driver driver = new FabricMySQLDriver();
+        DriverManager.registerDriver(driver);
+        return DriverManager.getConnection(Constant.getUrl(), Constant.getUsername(), Constant.getUserpawwsord());
+    }
+
     public void getFollowers() throws Exception{
 
-        long lCursor = -1;
-        long userID = 1260205219;
-        IDs followersIDs = twitter.getFollowersIDs(userID, lCursor);
+        PreparedStatement preparedStatementFollowers = connectDataBase().prepareStatement(Constant.getReplaceIntoFollowersValues());
 
-//        System.out.println("==========================");
-//        System.out.println(twitter.showUser(userID).getName());
-//        System.out.println("Followers: " + twitter.showUser(userID).getFollowersCount());
-//        System.out.println("==========================");
+        long userID = twitter.getId();
+        long cursor = -1;
+        IDs followersIDs = twitter.getFollowersIDs(userID, cursor);
 
-        do{
-            for (long i : followersIDs.getIDs()){
-
-                Driver driver = new FabricMySQLDriver();
-                DriverManager.registerDriver(driver);
-                Connection connection = DriverManager.getConnection(Constant.getUrl(), Constant.getUsername(), Constant.getUserpawwsord());
-
-                PreparedStatement preparedStatement = connection.prepareStatement(Constant.getQuerygetfollowers());
-
-                preparedStatement.setLong(1,i);
-                preparedStatement.setString(2,twitter.showUser(i).getName());
-
-                preparedStatement.executeUpdate();
-
-//                System.out.println("Name: " + twitter.showUser(i).getName());
-//                System.out.println("Follower ID: " + i);
-//                System.out.println("==========================");
+        do {
+            for (long i : followersIDs.getIDs())
+            {
+                preparedStatementFollowers.setLong(1, i);
+                preparedStatementFollowers.executeUpdate();
             }
+
+        } while (followersIDs.hasNext());
+    }
+
+    public void getFollowersCollection() throws Exception{
+
+        long userID = twitter.getId();
+        long cursor = -1;
+        IDs followersIDs = twitter.getFollowersIDs(userID, cursor);
+
+        do
+        {
+            for (long i : followersIDs.getIDs())
+            {
+                followersListFromServer.add(i);
+            }
+
         } while(followersIDs.hasNext());
+
+        System.out.println("Col" + followersListFromServer);
+
+    }
+
+    public void getResult() throws Exception{
+
+        PreparedStatement preparedStatementFollowers = connectDataBase().prepareStatement(Constant.getReplaceIntoFollowersValues());
+        PreparedStatement preparedStatementUnFollowers = connectDataBase().prepareStatement(Constant.getReplaceIntoUnfollowersValues());
+
+        ResultSet resultset = preparedStatementFollowers.executeQuery("select * from followers");
+
+        while (resultset.next()) {
+                followersListFromDataBase.add(resultset.getLong(1));
+        }
+
+        System.out.println("DB" + followersListFromDataBase);
+
+        followersListFromDataBase.removeAll(followersListFromServer);
+
+        System.out.println(followersListFromDataBase);
+
+        for (long i : followersListFromDataBase)
+        {
+            preparedStatementUnFollowers.setLong(1, i);
+            preparedStatementUnFollowers.executeUpdate();
+        }
 
     }
 

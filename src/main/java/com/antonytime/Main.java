@@ -2,21 +2,17 @@ package com.antonytime;
 
 public class Main {
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws Exception {
 
         TestApi testApi = new TestApi();
 
-        try {
-            testApi.logIn();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        testApi.logIn();
 
-        try {
-            testApi.getFollowers();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        testApi.getFollowers();
+
+        testApi.getFollowersCollection();
+
+        testApi.getResult();
     }
 
 }
