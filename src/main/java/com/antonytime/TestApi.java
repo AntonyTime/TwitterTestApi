@@ -12,14 +12,15 @@ import java.sql.*;
 import java.util.ArrayList;
 
 
-import com.mysql.fabric.jdbc.FabricMySQLDriver;
-
 public class TestApi {
 
     Twitter twitter = TwitterFactory.getSingleton();
 
     ArrayList<Long> followersListFromDataBase = new ArrayList <Long>();
     ArrayList<Long> followersListFromServer = new ArrayList <Long>();
+
+    public static Statement statement;
+    public static ResultSet resultSet;
 
     public void logIn() throws Exception {
 
@@ -50,16 +51,27 @@ public class TestApi {
         }
     }
 
-    public Connection connectDataBase() throws Exception{
+    public static Connection CreateDB() throws ClassNotFoundException, SQLException
+    {
+        Connection connection;
+        Class.forName("org.sqlite.JDBC");
+        connection = DriverManager.getConnection("jdbc:sqlite:DataBase.db");
 
-        Driver driver = new FabricMySQLDriver();
-        DriverManager.registerDriver(driver);
-        return DriverManager.getConnection(Constant.getUrl(), Constant.getUsername(), Constant.getUserpawwsord());
+        System.out.println("DataBase connect!");
+
+        statement = connection.createStatement();
+        statement.execute("CREATE TABLE if not exists 'followers' ('id'INTEGER PRIMARY KEY NOT NULL );");
+        statement.execute("CREATE TABLE if not exists 'unfollowers' ('id' INTEGER PRIMARY KEY NOT NULL);");
+
+        System.out.println("Table created or already exist.");
+
+        return connection;
     }
 
-    public void getFollowers() throws Exception{
+    public void getFollowersDataBase() throws Exception{
 
-        PreparedStatement preparedStatementFollowers = connectDataBase().prepareStatement(Constant.getReplaceIntoFollowersValues());
+        PreparedStatement preparedStatementFollowers = CreateDB().prepareStatement("REPLACE INTO followers VALUES(?);");
+
 
         long userID = twitter.getId();
         long cursor = -1;
@@ -90,22 +102,21 @@ public class TestApi {
 
         } while(followersIDs.hasNext());
 
-        System.out.println("Col" + followersListFromServer);
+        System.out.println("ArrayList followersListFromServer: " + followersListFromServer);
 
     }
 
     public void getResult() throws Exception{
 
-        PreparedStatement preparedStatementFollowers = connectDataBase().prepareStatement(Constant.getReplaceIntoFollowersValues());
-        PreparedStatement preparedStatementUnFollowers = connectDataBase().prepareStatement(Constant.getReplaceIntoUnfollowersValues());
+        PreparedStatement preparedStatementUnFollowers = CreateDB().prepareStatement("REPLACE INTO unfollowers VALUES(?);");
 
-        ResultSet resultset = preparedStatementFollowers.executeQuery("select * from followers");
+        resultSet = statement.executeQuery("SELECT * FROM followers");
 
-        while (resultset.next()) {
-                followersListFromDataBase.add(resultset.getLong(1));
+        while (resultSet.next()) {
+            followersListFromDataBase.add(resultSet.getLong(1));
         }
 
-        System.out.println("DB" + followersListFromDataBase);
+        System.out.println("ArrayList followersListFromDataBase" + followersListFromDataBase);
 
         followersListFromDataBase.removeAll(followersListFromServer);
 
@@ -115,6 +126,8 @@ public class TestApi {
         {
             preparedStatementUnFollowers.setLong(1, i);
             preparedStatementUnFollowers.executeUpdate();
+
+            System.out.println(twitter.showUser(i).getName());
         }
 
     }
