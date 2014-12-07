@@ -8,7 +8,7 @@ public class Main {
 
         testApi.logIn();
 
-        testApi.getFollowers();
+        testApi.getFollowersDataBase();
 
         testApi.getFollowersCollection();
 
