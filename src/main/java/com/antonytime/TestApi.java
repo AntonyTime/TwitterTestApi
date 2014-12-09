@@ -1,5 +1,6 @@
 package com.antonytime;
 
+import org.omg.CORBA.PUBLIC_MEMBER;
 import twitter4j.*;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
@@ -13,16 +14,17 @@ import java.net.URI;
 import java.sql.*;
 
 public class TestApi {
-
     Twitter twitter = TwitterFactory.getSingleton();
 
-    public static Connection connection;
-    public static Statement statement;
-    public static ResultSet resultSet;
+    public  Connection connection;
+    public  Statement statement;
+    public static final String FOLLOWERS_TABLE = "followers";
+    public static final String UNFOLLOWERS_TABLE = "unfollowers";
 
     public TestApi() throws SQLException, ClassNotFoundException {
         createDB();
     }
+
     public void login() throws Exception {
 
         twitter.setOAuthConsumer(Constant.getConsumerKey(), Constant.getConsumerSecret());
@@ -38,7 +40,7 @@ public class TestApi {
             try {
                 if (pin.length() > 0) {
                     accessToken = twitter.getOAuthAccessToken(requestToken, pin);
-                    System.out.println("Successfully LogIn!");
+                    System.out.println("Successfully Login!");
                 } else {
                     accessToken = twitter.getOAuthAccessToken();
                 }
@@ -85,7 +87,7 @@ public class TestApi {
     }
 
     public List<Long> getFollowersFromDB() throws SQLException, ClassNotFoundException {
-        resultSet = statement.executeQuery("SELECT * FROM followers");
+        ResultSet resultSet = statement.executeQuery("SELECT * FROM followers");
         List<Long> followersListFromDataBase = new ArrayList<Long>();
 
         while (resultSet.next()) {
@@ -101,26 +103,17 @@ public class TestApi {
         System.out.println(followersListFromDataBase);
     }
 
-    public void saveFollowersToDB(List<Long> followersListFromServer) throws Exception {
+    public void saveToDB(List<Long> dataList, String tableName) throws Exception {
+        String deleteQuery = String.format("DELETE FROM %s", tableName);
+        connection.prepareStatement(deleteQuery).execute();
 
-        PreparedStatement preparedStatementFollowers = connection.prepareStatement("REPLACE INTO followers VALUES(?);");
+        String query = String.format("INSERT INTO %s VALUES(?)", tableName);
+        PreparedStatement preparedStatementFollowers = connection.prepareStatement(query);
 
-        for (long i : followersListFromServer)
+        for (long i : dataList)
         {
             preparedStatementFollowers.setLong(1, i);
             preparedStatementFollowers.executeUpdate();
-        }
-    }
-
-    public void saveUnfollowersToDB(List<Long> followersListFromDataBase) throws SQLException, TwitterException {
-        PreparedStatement preparedStatementUnFollowers = connection.prepareStatement("REPLACE INTO unfollowers VALUES(?);");
-
-        for (long i : followersListFromDataBase)
-        {
-            preparedStatementUnFollowers.setLong(1, i);
-            preparedStatementUnFollowers.executeUpdate();
-
-            System.out.println(twitter.showUser(i).getName());
         }
     }
 }
