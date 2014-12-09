@@ -1,7 +1,5 @@
 package com.antonytime;
 
-import twitter4j.IDs;
-
 import java.util.List;
 
 public class Main {
@@ -21,8 +19,8 @@ public class Main {
 
         testApi.findUnfollowers(followersListFromDataBase, followersListFromServer);
 
-        testApi.saveFollowersToDB(followersListFromServer);
-        testApi.saveUnfollowersToDB(followersListFromDataBase);
+        testApi.saveToDB(followersListFromServer, TestApi.FOLLOWERS_TABLE);
+        testApi.saveToDB(followersListFromDataBase, TestApi.UNFOLLOWERS_TABLE);
     }
 
 }
